@@ -8,7 +8,10 @@ import Booking from "../models/Booking.js";
 // Override DNS for Atlas
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
-const MONGODB_URI = "mongodb+srv://coderyash:coderyash777@cluster0.aljefdm.mongodb.net/quick-dine";
+import dotenv from "dotenv";
+dotenv.config();
+
+const MONGODB_URI = process.env.MONGODB_URI!;
 
 const restaurantsData = [
     {
