@@ -6,7 +6,7 @@ import Footer from "../components/Footer.tsx";
 import RestaurantCard from "../components/RestaurantCard.tsx";
 import AuthModal from "../components/AuthModal.tsx";
 import { SlidersHorizontal, Search as SearchIcon, X, Check, MapPin, SearchXIcon } from "lucide-react";
-import { dummyRestaurant } from "../assets/assets.ts";
+import api from "../api.js";
 
 export default function Search() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -37,8 +37,24 @@ export default function Search() {
 
     useEffect(() => {
         const fetchRestaurants = async () => {
-            setRestaurants(dummyRestaurant);
-            setLoading(false);
+            setLoading(true);
+            try {
+                const params: any = {};
+                if (searchVal) params.search = searchVal;
+                if (locationVal) params.location = locationVal;
+                if (cuisinesSelected.length > 0) {
+                    params.cuisine = cuisinesSelected;
+                }
+                if (pricesSelected.length > 0) {
+                    params.priceRange = pricesSelected;
+                }
+                const response = await api.get("/api/restaurants", { params });
+                setRestaurants(response.data);
+            } catch (error) {
+                console.error("Failed to fetch restaurants:", error);
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchRestaurants();

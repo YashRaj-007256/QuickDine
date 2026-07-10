@@ -8,7 +8,7 @@ import CuisineBrowse from "../components/home/CuisineBrowse.tsx";
 import TrendingRow from "../components/home/TrendingRow.tsx";
 import MembershipSection from "../components/home/MembershipSection.tsx";
 import NewsletterCTA from "../components/home/NewsletterCTA.tsx";
-import { dummyFeaturedRestaurants } from "../assets/assets.ts";
+import api from "../api.js";
 
 export default function Home() {
     const [trending, setTrending] = useState<any[]>([]);
@@ -16,8 +16,14 @@ export default function Home() {
 
     useEffect(() => {
         const fetchTrending = async () => {
-            setTrending(dummyFeaturedRestaurants);
-            setLoading(false);
+            try {
+                const response = await api.get("/api/restaurants/trending");
+                setTrending(response.data);
+            } catch (error) {
+                console.error("Failed to fetch trending restaurants:", error);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchTrending();
     }, []);

@@ -5,11 +5,12 @@ import Footer from "../../components/Footer.tsx";
 import Loader from "../../components/Loader.tsx";
 import { useAppContext } from "../../context/AppContext.tsx";
 import { ShieldCheckIcon, CheckCircleIcon, BarChart3Icon } from "lucide-react";
+import toast from "react-hot-toast";
 
 // Subcomponents
 import AdminApprovals from "../../components/admin/AdminApprovals.tsx";
 import AdminStats from "../../components/admin/AdminStats.tsx";
-import { dummyAdminStats, dummyRestaurant } from "../../assets/assets.ts";
+import api from "../../api.js";
 
 export default function AdminDashboard() {
     const { logout } = useAppContext();
@@ -20,14 +21,31 @@ export default function AdminDashboard() {
     const [btnLoading, setBtnLoading] = useState<string | null>(null);
 
     const fetchAdminData = async () => {
-        setRestaurants(dummyRestaurant);
-        setStats(dummyAdminStats);
-        setLoading(false);
+        setLoading(true);
+        try {
+            const restResponse = await api.get("/api/restaurants/admin/all");
+            setRestaurants(restResponse.data);
+            const statsResponse = await api.get("/api/bookings/admin/stats");
+            setStats(statsResponse.data);
+        } catch (error) {
+            console.error("Failed to fetch admin data:", error);
+            toast.error("Failed to retrieve dashboard metrics.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleApproveStatus = async (restaurantId: string, status: "approved" | "rejected") => {
-        console.log(restaurantId, status);
-        setBtnLoading(null);
+        try {
+            setBtnLoading(restaurantId);
+            await api.put(`/api/restaurants/admin/${restaurantId}/status`, { status });
+            setRestaurants((prev) => prev.map((r) => (r._id === restaurantId ? { ...r, status } : r)));
+            toast.success(`Restaurant profile ${status} successfully.`);
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || "Failed to update restaurant status");
+        } finally {
+            setBtnLoading(null);
+        }
     };
 
     useEffect(() => {

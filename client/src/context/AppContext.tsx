@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { dummyUser } from "../assets/assets.js";
+import api from "../api.js";
+import { toast } from "react-hot-toast";
 
 interface UserType {
     _id: string;
@@ -36,34 +37,57 @@ export const AppContextProvider = ({ children }: Props) => {
     const [isAuthModalOpen, setAuthModalOpen] = useState<boolean>(false);
 
     const login = async (email: string, password: string): Promise<boolean> => {
-        console.log(email, password);
-        setToken(dummyUser.token);
-        setUser(dummyUser as any);
-        setToken(dummyUser.token);
-        localStorage.setItem("token", dummyUser.token);
-        return true;
+        try {
+            const response = await api.post("/api/auth/login", { email, password });
+            setToken(response.data.token);
+            setUser(response.data);
+            localStorage.setItem("token", response.data.token);
+            toast.success(`Welcome back, ${response.data.name}!`);
+            return true;
+        } catch (error: any) {
+            const errMsg = error.response?.data?.message || "Invalid credentials. Please try again.";
+            toast.error(errMsg);
+            return false;
+        }
     };
 
     const register = async (name: string, email: string, password: string, phone?: string, role?: string): Promise<boolean> => {
-        console.log(name, email, password, phone, role);
-        setToken(dummyUser.token);
-        setUser(dummyUser as any);
-        setToken(dummyUser.token);
-        localStorage.setItem("token", dummyUser.token);
-        return true;
+        try {
+            const response = await api.post("/api/auth/register", { name, email, password, phone, role });
+            setToken(response.data.token);
+            setUser(response.data);
+            localStorage.setItem("token", response.data.token);
+            toast.success("Account registered successfully!");
+            return true;
+        } catch (error: any) {
+            const errMsg = error.response?.data?.message || "Registration failed. Please try again.";
+            toast.error(errMsg);
+            return false;
+        }
     };
 
     const logout = () => {
         localStorage.removeItem("token");
         setToken(null);
         setUser(null);
-        window.location.href = "/";
+        toast.success("Signed out successfully");
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 500);
     };
 
     useEffect(() => {
         const loadUser = async () => {
             if (token) {
-                setUser(dummyUser as any);
+                try {
+                    const response = await api.get("/api/auth/me");
+                    setUser(response.data);
+                } catch (error) {
+                    console.error("Token validation failed, signing out:", error);
+                    localStorage.removeItem("token");
+                    setToken(null);
+                    setUser(null);
+                }
             }
             setLoading(false);
         };

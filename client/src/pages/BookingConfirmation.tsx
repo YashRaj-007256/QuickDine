@@ -10,10 +10,10 @@ import Loader from "../components/Loader.tsx";
 import BookingSuccess from "../components/booking/BookingSuccess.tsx";
 import BookingSummary from "../components/booking/BookingSummary.tsx";
 import BookingForm from "../components/booking/BookingForm.tsx";
-import { dummyBookingData, dummyRestaurant } from "../assets/assets.ts";
+import api from "../api.js";
 
 export default function BookingConfirmation() {
-    const { slug } = useParams<{ slug: string }>();
+    const slug = useParams<{ slug: string }>().slug;
     const [searchParams] = useSearchParams();
     const { user } = useAppContext();
     const navigate = useNavigate();
@@ -48,8 +48,16 @@ export default function BookingConfirmation() {
 
     useEffect(() => {
         const fetchRestaurant = async () => {
-            setRestaurant(dummyRestaurant.find((r) => r.slug === slug));
-            setLoading(false);
+            try {
+                const response = await api.get(`/api/restaurants/detail/${slug}`);
+                setRestaurant(response.data);
+            } catch (error) {
+                console.error("Failed to load restaurant details for booking:", error);
+                toast.error("Failed to load restaurant details.");
+                navigate("/");
+            } finally {
+                setLoading(false);
+            }
         };
 
         if (slug) {
@@ -73,10 +81,18 @@ export default function BookingConfirmation() {
 
         try {
             setConfirming(true);
-            setConfirmedBooking(dummyBookingData);
+            const response = await api.post("/api/bookings", {
+                restaurantId: restaurant._id,
+                date,
+                time: slot,
+                guests,
+                occasion,
+                specialRequests,
+            });
+            setConfirmedBooking(response.data);
             toast.success("Reservation confirmed!");
         } catch (error: any) {
-            toast.error(error?.response?.data?.message || error?.message);
+            toast.error(error?.response?.data?.message || "Failed to make reservation");
         } finally {
             setConfirming(false);
         }

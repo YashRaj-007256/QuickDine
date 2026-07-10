@@ -10,7 +10,7 @@ import PendingApproval from "../../components/owner/PendingApproval.tsx";
 import RequestRejected from "../../components/owner/RequestRejected.tsx";
 import OwnerBookings from "../../components/owner/OwnerBookings.tsx";
 import OwnerProfileDetails from "../../components/owner/OwnerProfileDetails.tsx";
-import { dummyMyBookingsData, dummyRestaurant } from "../../assets/assets.ts";
+import api from "../../api.js";
 
 export default function OwnerDashboard() {
     const { logout } = useAppContext();
@@ -20,9 +20,19 @@ export default function OwnerDashboard() {
     const [activeTab, setActiveTab] = useState<"bookings" | "details">("bookings");
 
     const fetchOwnerData = async () => {
-        setRestaurant(dummyRestaurant[0]);
-        setBookings(dummyMyBookingsData);
-        setLoading(false);
+        setLoading(true);
+        try {
+            const restResponse = await api.get("/api/restaurants/owner/my-restaurant");
+            setRestaurant(restResponse.data);
+            if (restResponse.data) {
+                const bookResponse = await api.get("/api/bookings/owner-bookings");
+                setBookings(bookResponse.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch owner data:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {

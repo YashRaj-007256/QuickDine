@@ -11,7 +11,7 @@ import RestaurantHero from "../components/restaurant/RestaurantHero.tsx";
 import RestaurantInfo from "../components/restaurant/RestaurantInfo.tsx";
 import RestaurantReviews from "../components/restaurant/RestaurantReviews.tsx";
 import BookingWidget from "../components/restaurant/BookingWidget.tsx";
-import { dummyAvailability, dummyRestaurant } from "../assets/assets.ts";
+import api from "../api.js";
 
 export default function RestaurantDetail() {
     const { slug } = useParams<{ slug: string }>();
@@ -30,8 +30,16 @@ export default function RestaurantDetail() {
 
     useEffect(() => {
         const fetchRestaurant = async () => {
-            setRestaurant(dummyRestaurant.find((r) => r.slug === slug));
-            setLoading(false);
+            try {
+                const response = await api.get(`/api/restaurants/detail/${slug}`);
+                setRestaurant(response.data);
+            } catch (error) {
+                console.error("Failed to fetch restaurant detail:", error);
+                toast.error("Failed to load restaurant details.");
+                navigate("/search");
+            } finally {
+                setLoading(false);
+            }
         };
 
         if (slug) {
@@ -41,8 +49,18 @@ export default function RestaurantDetail() {
 
     useEffect(() => {
         const fetchAvailability = async () => {
-            setSlotsAvailability(dummyAvailability);
-            setLoadingSlots(false);
+            if (!selectedDate || !restaurant) return;
+            setLoadingSlots(true);
+            try {
+                const response = await api.get(`/api/restaurants/${slug}/availability`, {
+                    params: { date: selectedDate }
+                });
+                setSlotsAvailability(response.data);
+            } catch (error) {
+                console.error("Failed to fetch slots availability:", error);
+            } finally {
+                setLoadingSlots(false);
+            }
         };
         fetchAvailability();
     }, [restaurant?._id, selectedDate]);
